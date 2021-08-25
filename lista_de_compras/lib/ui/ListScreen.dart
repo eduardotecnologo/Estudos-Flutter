@@ -18,25 +18,31 @@ class _ListScreenState extends State<ListScreen> {
         title: Text('Lista de Compras'),
         centerTitle: true,
         backgroundColor: Colors.blueGrey,
-        ),
-        body: ListView.separated(
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView.separated(
           separatorBuilder: (context, index) => Divider(color: Colors.black38),
           itemCount: items.length,
-          itemBuilder: (context, index){
-
+          itemBuilder: (context, index) {
             final item = items[index];
 
             return ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.blueGrey,
                 child: IconTheme(
-                  child: Icon(Icons.done),
-                  data: IconThemeData(color: Colors.white)
-                  ),
-                ),
+                    child: Icon(item.isDone ? Icons.done_all : Icons.done),
+                    data: IconThemeData(color: Colors.white)),
+              ),
               title: Text(item.title, style: TextStyle(color: Colors.blueGrey)),
+              onTap: () {
+                setState(() {
+                  items[index].isDone = !items[index].isDone;
+                });
+              },
             );
           },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blueGrey,
@@ -45,15 +51,29 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
   }
+
   void _addItem() async {
     final item = await showDialog<Item>(
         context: context,
-        builder: (BuildContext context){
+        builder: (BuildContext context) {
           return new AddItem();
+        });
+
+        if(item != null){
+          setState(() => items.add(item));
       }
-    );
-    setState(() {
-    items.add(item!);
+    }
+
+  Future<void> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
+      setState(() {
+        items.sort((a, b) {
+          if (a.isDone && !b.isDone)
+            return 1;
+          else if (!a.isDone && b.isDone) return -1;
+            return 0;
+      });
     });
+    return Future.value();
   }
 }
